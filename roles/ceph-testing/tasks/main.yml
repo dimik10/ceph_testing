@@ -1,0 +1,61 @@
+---
+- name: ceph-testing start
+  tags: start
+  block:
+    - name: Копирование файла скрипта
+      tags: copy
+      ansible.builtin.template:
+        src: "templates/fill_ceph.sh.j2"
+        dest: "{{ folder }}/fill_ceph.sh"
+        mode: '0755'
+    - name: Установка программы BC и tmux
+      apt:
+        name:
+          - bc
+          - tmux
+        state: latest
+        update_cache: yes
+    - name: Запуск скрипта через tmux 1 сессия
+      shell:
+        cmd: tmux new-session -d -s myTempSession"{{ item }}" {{ folder }}/fill_ceph.sh
+      with_items: [1, 2 ,3, 4]
+      when:  item <= num_session
+
+- name: ceph-testing stop
+  tags: stop
+  block:
+
+    - name: Kill сессии tmux
+      tags: stop
+      ansible.builtin.shell: "for i in `tmux ls | grep myTempSession | awk '{print $1}' | sed 's/://'`; do tmux kill-session -t $i; done"
+      register: result
+      until: result.stderr.find("no server running on /tmp/tmux-0/default") != -1
+      retries: 2
+      delay: 1
+
+    - name: Remove file (delete file) fill_ceph.sh
+      tags: stop
+      ansible.builtin.file:
+        path: "{{ folder }}/fill_ceph.sh"
+        state: absent
+
+- name: запуск нагрузки процессора start
+  tags: hot_start
+  block:
+    - name: Установка программы stress
+      apt:
+        name:
+          - stress
+        state: latest
+        update_cache: yes
+    - name: Запуск прогрева
+      shell: nohup stress -c {{ core }} -t {{ time }} >/dev/null 2>&1 &
+#      async: 10
+      poll: 0
+- name: останов нагрузки процессора start
+  tags: hot_stop
+  block:
+    - name: Kill stress
+      shell:
+        cmd: pkill stress
+

@@ -1,0 +1,25 @@
+#!/bin/bash
+
+
+#v 1.0
+#Скрипт для заполнение Ceph random данными
+
+#Объём ceph в Петебайтах (порог)
+A={{ porog }}
+#Узнаём объём места в ceph
+B=$(df -h | grep /mnt/{{ ceph_rw }} | awk '{print $4}' | rev | cut -c2- | rev)
+#Номер директории куда класть файлики
+C=10
+
+
+#Если объём не меньше $А ПБ то заполняем, если меньше то выход
+while [ `echo "$A < $B" | bc` -eq 1 ]
+do
+logger -s  "Пороговое значение:$AПБ, осталось места в CEPH:$BПБ"
+sleep 5
+C=$((C+1))
+mkdir /mnt/{{ ceph_rw }}/$C
+dd if=/dev/zero of=/mnt/{{ ceph_rw }}/$C/$(hexdump -n 16 -v -e '/1 "%02X"' -e '/16 "\n"' /dev/urandom) count=500 bs=300G
+B=$(df -h | grep /mnt/{{ ceph_rw }} | awk '{print $4}' | rev | cut -c2- | rev)
+done
+exit 0

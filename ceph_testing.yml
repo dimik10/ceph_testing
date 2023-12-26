@@ -1,0 +1,11 @@
+---
+- hosts: all
+  gather_facts: no
+#  serial: 1
+  vars:
+     ansible_python_interpreter: /usr/bin/python3
+  become: yes
+
+  roles:
+    - role: ceph-testing
+      tags: ceph-testing
