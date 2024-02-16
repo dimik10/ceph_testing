@@ -1,0 +1,139 @@
+[global]
+ioengine=libaio #асинхронный io
+direct=1
+#time_based
+runtime=30 #
+#refill_buffers
+#norandommap
+#randrepeat=0
+group_reporting # Комбинирование множественных заданий для отчёта
+#eta-newline=1
+size=5G # Max read and write fio process/thread
+lockmem=1G # заблокированный размер RAM для использования.
+#numjobs=1 #
+#iodepth=1 #количество потоков
+filename=/dev/rbd0
+
+#Тестирование IOPS, случайная запись
+[4K_randwrite]
+rw=randwrite
+iodepth=96
+numjobs=1
+bs=4k
+stonewall
+
+#Тестирование IOPS, случайное чтение
+[4K_randread]
+rw=randread
+bs=4k
+stonewall
+iodepth=16
+numjobs=8
+
+
+#Тестирование IOPS, последовательная запись
+[4K_write]
+rw=write
+bs=4k
+stonewall
+iodepth=96
+numjobs=4
+
+#Тестирование IOPS, последовательное чтение
+[4K_read]
+rw=read
+bs=4k
+stonewall
+iodepth=128
+numjobs=8
+
+[4K_write40_read60]
+rwmixread=40
+bs=4k
+stonewall
+iodepth=128
+numjobs=8
+
+
+#----------------------
+
+
+#Тестирование IOPS, случайная запись
+[8K_randwrite]
+rw=randwrite
+iodepth=96
+numjobs=1
+bs=8k
+stonewall
+
+#Тестирование IOPS, случайное чтение
+[8K_randread]
+rw=randread
+bs=8k
+stonewall
+iodepth=16
+numjobs=8
+
+
+#Тестирование IOPS, последовательная запись
+[8K_write]
+rw=write
+bs=8k
+stonewall
+iodepth=96
+numjobs=4
+
+#Тестирование IOPS, последовательное чтение
+[8K_read]
+rw=read
+bs=8k
+stonewall
+iodepth=128
+numjobs=8
+
+[8K_write40_read60]
+rwmixread=40
+bs=8k
+stonewall
+iodepth=128
+numjobs=8
+
+
+
+#----------------------
+
+
+#Тестирование пропускной способности, последовательная запись
+[4M_write]
+rw=write
+bs=4M
+stonewall
+iodepth=32
+numjobs=1 
+
+#Тестирование пропускной способности на чтение
+[4M_read]
+rw=read
+bs=4M
+stonewall
+iodepth=32
+numjobs=1 
+
+#------------	----------
+#Безумные тесты
+#Тест IOPS записи последовательная запись. Глубина очереди 1024. 32 задания.
+[4K_write]
+rw=write
+bs=4K
+stonewall
+numjobs=32
+iodepth=1024
+
+
+#Тест IOPS записи последовательное чтение. Глубина очереди 1024. 32 задания.
+[4K_read]
+rw=read
+bs=4K
+stonewall
+numjobs=32
+iodepth=1024
