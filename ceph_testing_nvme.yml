@@ -1,0 +1,12 @@
+---
+- hosts: all
+  gather_facts: yes
+#  serial: 1
+  vars:
+     ansible_python_interpreter: /usr/bin/python3
+  become: yes
+
+  roles:
+    - role: ceph-testing-nvme
+      tags: ceph-testing-nvme
+

@@ -1,0 +1,97 @@
+---
+
+#- debug: "Host: {{ ansible_hostname }} FQDN: {{ ansible_nodename }}"
+
+- name: "Установка программы fio и ceph-common"
+  apt:
+    name:
+      - fio
+      - ceph-common
+    state: latest
+#    update_cache: yes
+
+#копирование файлов в /tmp/tests
+
+- name: "Create a directory {{ dst }}"
+  ansible.builtin.file:
+    path: '{{ dst }}'
+    state: directory
+
+- name: "Copy file with owner and permissions"
+  ansible.builtin.copy:
+    src:  '{{ item }}'
+    dest: '{{ dst }}'
+  loop:
+    - "{{ keyring }}"
+    - "{{ conf }}"
+
+#Создание диска
+- name: create disk
+  ansible.builtin.command: "rbd create --size {{ size }} {{ pool }}/test-{{ ansible_hostname }} --id {{ username }} --keyring={{ dst }}/{{ keyring }} -c {{ dst }}/{{ conf }}"
+  register: rbd_disk
+  ignore_errors: yes
+
+- debug: var=rbd_disk.stdout
+
+#Задержка чтобы диск создался.
+- name: "Задержка чтобы диск создался."
+  ansible.builtin.wait_for:
+    timeout: 30
+
+#монтирование rbd диска
+- name: mount disk
+  ansible.builtin.command: "rbd device map {{ pool }}/test-{{ ansible_hostname }} --id {{ username }} --keyring={{ dst }}/{{ keyring }} -c {{ dst }}/{{ conf }}"
+  register: rbd_mount
+
+#- debug: var=rbd_mount.stdout_lines
+- debug: var=rbd_mount.stdout
+#
+##запуск теста на запись
+- name: "запуск теста на запись"
+  shell: "sudo fio --filename={{ rbd_mount.stdout }} --direct=1 --rw=write --bs={{ block }} --ioengine=libaio --lockmem=5G --iodepth={{ depth }} --runtime={{ run_rw }} --numjobs={{ jobs }} --size={{size_fio}} --time_based --group_reporting --name=test-job"
+  args:
+   chdir: "{{ dst }}"
+  become: true
+  async: '1000'
+  poll: 0
+  register: fio_status
+#
+- name: poll fio status
+  async_status:
+    jid: "{{ fio_status.ansible_job_id }}"
+  register: fio_job_result
+  until: fio_job_result.finished
+  retries: 30
+# #delay: "{{((final_time| int) / 30) | int}}"
+
+
+##запуск теста на чтение
+- name: "запуск теста на чтение "
+  shell: "sudo fio --filename={{ rbd_mount.stdout }} --direct=1 --rw=read --bs={{ block }} --ioengine=libaio --lockmem=5G --iodepth={{ depth }} --runtime={{ run_ro }} --numjobs={{jobs}} --size={{size_fio}} --time_based --group_reporting --name=test-job --eta-newline=1 --readonly"
+  args:
+   chdir: "{{ dst }}"
+  become: true
+  async: '1000'
+  poll: 0
+  register: fio_status
+#
+- name: poll fio status
+  async_status:
+    jid: "{{ fio_status.ansible_job_id }}"
+  register: fio_job_result
+  until: fio_job_result.finished
+  retries: 60
+
+
+#размонтирование rbd диска
+- name: "unmmount disk {{ rbd_mount.stdout }}"
+  ansible.builtin.command: "rbd device unmap {{ pool }}/test-{{ ansible_hostname }} --id {{ username }} --keyring={{ dst }}/{{ keyring }} -c {{ dst }}/{{ conf }}"
+  register: rbd_unmount
+
+- debug: var=rbd_unmount.stdout
+
+
+- name: "Recursively remove directory {{ dst }}"
+  ansible.builtin.file:
+    path: "{{ dst }}"
+    state: absent
