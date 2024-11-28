@@ -1,0 +1,21 @@
+---
+
+- name: disable netbackup_exporter service
+  service:
+    name: netbackup_exporter
+    state: stopped
+    enabled: no
+#  failed_when: false
+
+- name: remove netbackup_exporter service files
+  file:
+    name: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/systemd/system/netbackup_exporter.service
+    - /run/netbackup_exporter.service-cid
+
+- name: remove netbackup_exporter image
+  command: "{{ container_binary }} rmi {{ netbackup_container_image }}"
+#  changed_when: false
+#  failed_when: false

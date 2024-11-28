@@ -1,0 +1,9 @@
+netbackup_exporter_container_image: "docker pull dimik10/netbackup_exporter:latest"
+netbackup_exporter_port: 9101
+container_binary: docker
+scrappingInterval: "5m"
+apiKey: ""
+host_nb: "192.168.1.1"
+domainType: "NT"
+domain: ""
+run_host: "0.0.0.0"

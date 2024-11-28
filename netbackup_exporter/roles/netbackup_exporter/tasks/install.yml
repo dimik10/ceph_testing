@@ -1,0 +1,18 @@
+---
+#установить программы
+- name: "Install dependencies nvme, sponge"
+  apt:
+    name:
+    - docker
+    - docker.io
+
+#создать директорию
+- name: "Create directory /opt/netbackup_exporter"
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0775
+  loop:
+    - "/opt/netbackup_exporter"
+
+

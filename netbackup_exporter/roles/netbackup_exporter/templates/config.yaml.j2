@@ -1,0 +1,16 @@
+---
+server:
+    host: "{{ run_host }}"
+    port: {{ netbackup_exporter_port }}
+    uri: "/metrics"
+    scrappingInterval: "{{ scrappingInterval }}"
+    logName: "nbu-exporter.log"
+nbuserver:
+    scheme: "https"
+    uri: "/netbackup"
+    domain: "{{ domain }}"
+    domainType: "{{ domainType }}"
+    host: "{{ host_nb }}"
+    port: 1556
+    apiKey: "{{ apikey }}"
+    contentType: "application/vnd.netbackup+json; version=3.0"
